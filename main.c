@@ -241,24 +241,7 @@ USB_write_IO(ios_handle_t *handle)
     } else {
         // do the ch341a protocol
         /* Send the command frame */
-        if (send_relay_cmd(dev, 0x00)) goto error;
-        /* send stuff for every bit in the mask */
-        for (uint8_t mask = 128; mask > 0; mask >>= 1) {
-            if (active_relays & mask) {
-                /* Send "relay on" */
-                if (send_relay_cmd(dev, 0x20)) goto error;
-                if (send_relay_cmd(dev, 0x28)) goto error;
-                if (send_relay_cmd(dev, 0x20)) goto error;
-            } else {
-                /* Send "relay off" */
-                if (send_relay_cmd(dev, 0x00)) goto error;
-                if (send_relay_cmd(dev, 0x08)) goto error;
-                if (send_relay_cmd(dev, 0x00)) goto error;
-            }
-        }
-        /* End the command frame */
-        if (send_relay_cmd(dev, 0x00)) goto error;
-        if (send_relay_cmd(dev, 0x01)) goto error;
+        if (send_relay_cmd(dev, 255 & ~active_relays)) goto error;
     }
 
     /* Remember the status */
@@ -359,8 +342,8 @@ run_once(ios_handle_t *h, int argc, char *argv[])
         int relay = atoi(argv[i]);
         if (relay < FIRST_RELAY_NO || relay > LAST_RELAY_NO) {
             fprintf(stderr, "error: only give valid relay numbers (1-8) as parameter\n");
-            fprintf(stderr, "you can use -v as first option to enable verbose output debugging\n");
-            fprintf(stderr, "example: ./%s -v 1 5 7 will switch 1 5 and 7 on the rest will be off\n", argv[0]);
+            fprintf(stderr, "you can use -z 31 as first option to enable verbose output debugging\n");
+            fprintf(stderr, "example: ./%s -z 31 1 5 7 will switch 1 5 and 7 on the rest will be off\n", argv[0]);
             return 2;
         }
         h->active_relays |= (1 << (relay - 1));
